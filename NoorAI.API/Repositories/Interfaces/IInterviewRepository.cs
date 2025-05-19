@@ -8,5 +8,4 @@ public interface IInterviewRepository
     Task<IEnumerable<Interview>> GetAllAsync();
     Task AddAsync(Interview interview);
     Task SaveChangesAsync();
-    Task<string> GetFirstJobDescriptionAsync();
 }

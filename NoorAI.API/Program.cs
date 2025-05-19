@@ -18,11 +18,16 @@ builder.Services.AddControllers()
 // Add CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", builder =>
-        builder.WithOrigins("http://localhost:3001", "https://localhost:3001")
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials());
+    options.AddPolicy("AllowFrontend", policy =>
+        policy.WithOrigins(
+            "http://localhost:8453",
+            "http://ui:8453",
+            "http://localhost:5158",
+            "http://api:5158"
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials());
 });
 
 // Add Ollama service
@@ -36,6 +41,7 @@ builder.Services.AddScoped<IOllamaService, OllamaService>();
 builder.Services.AddScoped<IUploadService, UploadService>();
 builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
 builder.Services.AddScoped<IInterviewService, InterviewService>();
+builder.Services.AddScoped<ResumeParserService>();
 
 // Add database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -48,14 +54,8 @@ builder.Services.AddSwaggerGen();
 // Configure Kestrel
 builder.WebHost.ConfigureKestrel(options =>
 {
-    // HTTP
-    options.ListenLocalhost(5158);
-    
-    // HTTPS
-    options.ListenLocalhost(5159, listenOptions =>
-    {
-        listenOptions.UseHttps();
-    });
+    // HTTP - listen on all interfaces
+    options.ListenAnyIP(5158);
 
     // Configure timeouts
     options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10);

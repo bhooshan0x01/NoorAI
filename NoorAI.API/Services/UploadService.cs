@@ -7,29 +7,46 @@ using NoorAI.API.DTOs;
 
 namespace NoorAI.API.Services;
 
-public class UploadService(IInterviewRepository interviewRepository, IOllamaService ollamaService) : IUploadService
+public class UploadService(
+    IInterviewRepository interviewRepository, 
+    IOllamaService ollamaService,
+    ResumeParserService resumeParserService) : IUploadService
 {
-    public async Task<InterviewResponse> UploadResumeAsync(IFormFile file)
+    public async Task<InterviewResponse> UploadFilesAsync(IFormFile resume, IFormFile jobDescription)
     {
-        if (file == null || file.Length == 0)
-            throw new ArgumentException("No file uploaded");
+        if (resume == null || resume.Length == 0)
+            throw new ArgumentException("No resume file uploaded");
 
-        // Convert file to base64 string
-        using var memoryStream = new MemoryStream();
-        await file.CopyToAsync(memoryStream);
-        var fileBytes = memoryStream.ToArray();
-        var base64Content = Convert.ToBase64String(fileBytes);
+        if (jobDescription == null || jobDescription.Length == 0)
+            throw new ArgumentException("No job description file uploaded");
 
-        // Get the most recent job description from the database
-        var jobDescription = await interviewRepository.GetFirstJobDescriptionAsync();
-        if (string.IsNullOrEmpty(jobDescription))
-            throw new InvalidOperationException("No job description found in the database. Please upload a job description first.");
+        // Parse user info from resume
+        var (userName, userEmail) = await resumeParserService.ParseResumeInfo(resume);
+        
+        if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(userEmail))
+        {
+            throw new ArgumentException("Could not extract user name or email from the resume. Please ensure the resume contains this information.");
+        }
+
+        // Convert resume to base64 string
+        using var resumeMemoryStream = new MemoryStream();
+        await resume.CopyToAsync(resumeMemoryStream);
+        var resumeBytes = resumeMemoryStream.ToArray();
+        var resumeBase64Content = Convert.ToBase64String(resumeBytes);
+
+        // Convert job description to base64 string
+        using var jobDescMemoryStream = new MemoryStream();
+        await jobDescription.CopyToAsync(jobDescMemoryStream);
+        var jobDescBytes = jobDescMemoryStream.ToArray();
+        var jobDescBase64Content = Convert.ToBase64String(jobDescBytes);
 
         var interview = new Interview
         {
-            ResumeContent = base64Content,
-            JobDescription = jobDescription,
-            Transcript = "Resume uploaded.",
+            UserName = userName,
+            UserEmail = userEmail,
+            ResumeContent = resumeBase64Content,
+            JobDescription = jobDescBase64Content,
+            Transcript = "Resume and job description uploaded.",
             Status = InterviewStatus.InProgress
         };
 
@@ -47,7 +64,7 @@ public class UploadService(IInterviewRepository interviewRepository, IOllamaServ
         try
         {
             // Add introduction
-            var introduction = "Thank you for sharing your resume. I'm NoorAI, your AI interview assistant. Let's begin the interview.";
+            var introduction = $"Thank you for sharing your resume and job description, {interview.UserName}. I'm NoorAI, your AI interview assistant. Let's begin the interview.";
             interview.Transcript += $"\nAI: {introduction}";
             await interviewRepository.SaveChangesAsync();
 

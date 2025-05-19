@@ -8,12 +8,14 @@ namespace NoorAI.API.Services;
 public class InterviewService(IInterviewRepository interviewRepository, IOllamaService ollamaService)
     : IInterviewService
 {
-    private const int MaxQuestions = 5;
+    private const int MaxQuestions = 6;
 
-    public async Task<InterviewResponse> StartInterview(string resumeContent, string jobDescription)
+    public async Task<InterviewResponse> StartInterview(string resumeContent, string jobDescription, string userName, string userEmail)
     {
         var interview = new Interview
         {
+            UserName = userName,
+            UserEmail = userEmail,
             ResumeContent = resumeContent,
             JobDescription = jobDescription,
             Transcript = "Interview started.",
@@ -48,12 +50,17 @@ public class InterviewService(IInterviewRepository interviewRepository, IOllamaS
 
         if (questionCount >= MaxQuestions)
         {
-            // End the interview if we've reached the maximum number of questions
+            // Add closing message to transcript
+            var closingMessage = $"Interview automatically ended after {MaxQuestions} questions at {DateTime.UtcNow:g} UTC.";
+            interview.Transcript += $"\nSystem: {closingMessage}";
+
+            // Generate comprehensive feedback
             var feedback = await ollamaService.GenerateInterviewFeedback(
                 interview.ResumeContent,
                 interview.JobDescription,
                 interview.Transcript);
 
+            // Store the feedback and update interview status
             interview.Feedback = feedback;
             interview.Status = InterviewStatus.Completed;
             interview.CompletedAt = DateTime.UtcNow;
@@ -82,18 +89,34 @@ public class InterviewService(IInterviewRepository interviewRepository, IOllamaS
         if (interview.Status == InterviewStatus.Completed)
             throw new InvalidOperationException("Interview is already completed");
 
+        // Add closing message to transcript
+        var closingMessage = $"Interview ended by {interview.UserName} at {DateTime.UtcNow:g} UTC.";
+        interview.Transcript += $"\nSystem: {closingMessage}";
+
+        // Generate comprehensive feedback
         var feedback = await ollamaService.GenerateInterviewFeedback(
             interview.ResumeContent,
             interview.JobDescription,
             interview.Transcript);
 
+        // Store the feedback and update interview status
         interview.Feedback = feedback;
         interview.Status = InterviewStatus.Completed;
         interview.CompletedAt = DateTime.UtcNow;
 
+        // Save all changes
         await interviewRepository.SaveChangesAsync();
 
-        return new InterviewFeedbackResponse(interview.Id, feedback, interview.Transcript);
+        // Return the complete feedback response
+        return new InterviewFeedbackResponse(
+            interview.Id,
+            feedback,
+            interview.Transcript,
+            interview.UserName,
+            interview.UserEmail,
+            interview.CreatedAt,
+            interview.CompletedAt
+        );
     }
 
     public async Task<InterviewDetailsResponse> UpdateJobDescription(int interviewId, string jobDescription)
@@ -133,5 +156,44 @@ public class InterviewService(IInterviewRepository interviewRepository, IOllamaS
             interview.CompletedAt,
             interview.Status
         ));
+    }
+
+    public async Task<IEnumerable<InterviewSummaryResponse>> GetInterviewSummaries()
+    {
+        var interviews = await interviewRepository.GetAllAsync();
+        return interviews.Select(interview => new InterviewSummaryResponse(
+            interview.Id,
+            interview.UserName,
+            interview.UserEmail,
+            interview.JobDescription,
+            interview.Transcript,
+            interview.Feedback,
+            interview.CreatedAt,
+            interview.CompletedAt,
+            interview.Status,
+            interview.Transcript.Split("\nAI:").Length - 1,
+            interview.CompletedAt.HasValue ? interview.CompletedAt.Value - interview.CreatedAt : null
+        ));
+    }
+
+    public async Task<InterviewSummaryResponse?> GetInterviewFullDetails(int id)
+    {
+        var interview = await interviewRepository.GetByIdAsync(id);
+        if (interview == null)
+            return null;
+
+        return new InterviewSummaryResponse(
+            interview.Id,
+            interview.UserName,
+            interview.UserEmail,
+            interview.JobDescription,
+            interview.Transcript,
+            interview.Feedback,
+            interview.CreatedAt,
+            interview.CompletedAt,
+            interview.Status,
+            interview.Transcript.Split("\nAI:").Length - 1,
+            interview.CompletedAt.HasValue ? interview.CompletedAt.Value - interview.CreatedAt : null
+        );
     }
 } 

@@ -5,5 +5,5 @@ namespace NoorAI.API.Services.Interfaces;
 
 public interface IUploadService
 {
-    Task<InterviewResponse> UploadResumeAsync(IFormFile file);
+    Task<InterviewResponse> UploadFilesAsync(IFormFile resume, IFormFile jobDescription);
 }

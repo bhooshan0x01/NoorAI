@@ -9,7 +9,9 @@ public class InterviewRepository(ApplicationDbContext context) : IInterviewRepos
 {
     public async Task<Interview?> GetByIdAsync(int id)
     {
-        return await context.Interviews.FindAsync(id);
+        return await context.Interviews
+            .Include(i => i.Questions)
+            .FirstOrDefaultAsync(i => i.Id == id);
     }
 
     public async Task AddAsync(Interview interview)
@@ -24,16 +26,10 @@ public class InterviewRepository(ApplicationDbContext context) : IInterviewRepos
 
     public async Task<IEnumerable<Interview>> GetAllAsync()
     {
-        return await context.Interviews.ToListAsync();
-    }
-
-    public async Task<string> GetFirstJobDescriptionAsync()
-    {
-        var interview = await context.Interviews
-            .Where(i => !string.IsNullOrEmpty(i.JobDescription))
+        return await context.Interviews
+            .Include(i => i.Questions)
             .OrderByDescending(i => i.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        return interview?.JobDescription ?? string.Empty;
+            .ToListAsync();
     }
+
 }

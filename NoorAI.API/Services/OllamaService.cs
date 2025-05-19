@@ -65,13 +65,11 @@ public class OllamaService(IConfiguration configuration) : IOllamaService
         // Clean the response by removing the <think> section if present
         var cleanedResponse = ollamaResponse.Response;
         var thinkStartIndex = cleanedResponse.IndexOf("<think>", StringComparison.OrdinalIgnoreCase);
-        if (thinkStartIndex >= 0)
+        if (thinkStartIndex < 0) return cleanedResponse;
+        var thinkEndIndex = cleanedResponse.IndexOf("</think>", thinkStartIndex, StringComparison.OrdinalIgnoreCase);
+        if (thinkEndIndex >= 0)
         {
-            var thinkEndIndex = cleanedResponse.IndexOf("</think>", thinkStartIndex, StringComparison.OrdinalIgnoreCase);
-            if (thinkEndIndex >= 0)
-            {
-                cleanedResponse = cleanedResponse[(thinkEndIndex + 8)..].Trim();
-            }
+            cleanedResponse = cleanedResponse[(thinkEndIndex + 8)..].Trim();
         }
 
         return cleanedResponse;
@@ -80,26 +78,70 @@ public class OllamaService(IConfiguration configuration) : IOllamaService
     public async Task<string> GenerateInterviewFeedback(string resumeContent, string jobDescription, string transcript)
     {
         var prompt = $"""
-                      Based on the following interview transcript, provide comprehensive feedback on the candidate's performance.
-                              Consider their resume and the job requirements in your analysis.
+                      Based on the following interview transcript, provide honest and critical feedback on the candidate's performance.
+                      Be direct and specific about where their responses fell short of expectations or were incorrect.
+                      Analyze their actual responses and provide concrete examples from the conversation.
 
-                              Resume:
-                              {resumeContent}
+                      Resume:
+                      {resumeContent}
 
-                              Job Description:
-                              {jobDescription}
+                      Job Description:
+                      {jobDescription}
 
-                              Interview Transcript:
-                              {transcript}
+                      Interview Transcript:
+                      {transcript}
 
-                              Provide feedback that includes:
-                              1. Overall performance assessment
-                              2. Strengths demonstrated
-                              3. Areas for improvement
-                              4. Specific examples from their responses
-                              5. Recommendations for future interviews
+                      Provide a structured feedback that includes:
 
-                              Feedback:
+                      1. Overall Performance Assessment:
+                      - Honestly evaluate how well the candidate's responses aligned with the job requirements
+                      - Be specific about where their answers were incorrect or insufficient
+                      - Note any concerning patterns in their responses
+                      - If responses were consistently off-target, clearly state this
+                      - If technical knowledge was incorrect, point this out directly
+
+                      2. Critical Analysis of Responses:
+                      - For each question, evaluate:
+                        * Whether the answer was technically correct
+                        * If the response matched the job requirements
+                        * If they demonstrated the required knowledge
+                        * If they provided relevant examples
+                      - Be direct about incorrect or inadequate responses
+                      - Point out specific instances where they failed to meet expectations
+
+                      3. Major Concerns:
+                      - List specific areas where the candidate's responses were problematic
+                      - Highlight instances where they demonstrated lack of required knowledge
+                      - Point out responses that showed misunderstanding of key concepts
+                      - Note any red flags in their answers
+
+                      4. Areas for Improvement:
+                      - Identify specific responses that were incorrect or inadequate
+                      - Point out where they failed to demonstrate required skills
+                      - Note instances where they didn't provide concrete examples
+                      - Highlight where their experience didn't match job requirements
+
+                      5. Job Fit Assessment:
+                      - Honestly evaluate if their demonstrated skills match the job requirements
+                      - Clearly state any significant gaps between their responses and job needs
+                      - If they're not a good fit, explain why based on their actual responses
+                      - Be specific about which required skills they failed to demonstrate
+
+                      6. Recommendations:
+                      - Provide specific suggestions for addressing each identified issue
+                      - Include examples of correct answers they should have given
+                      - Suggest concrete ways to improve their knowledge gaps
+                      - If they're not a good fit, suggest what they need to learn or improve
+
+                      Important Guidelines:
+                      - Be honest and direct about poor performance
+                      - Don't sugar-coat feedback when responses were incorrect
+                      - Use specific examples from their responses to support your critique
+                      - If they consistently failed to meet requirements, state this clearly
+                      - Focus on actual responses given, not potential or hypothetical performance
+
+                      Format the feedback in a clear, structured way with specific examples from the transcript.
+                      Feedback:
                       """;
 
         var request = new
@@ -119,15 +161,17 @@ public class OllamaService(IConfiguration configuration) : IOllamaService
         var ollamaResponse = JsonSerializer.Deserialize<OllamaResponse>(responseContent);
 
         // Clean the response by removing the <think> section if present
+        if (ollamaResponse?.Response == null)
+        {
+            return "Could not generate feedback at this time.";
+        }
         var cleanedResponse = ollamaResponse.Response;
         var thinkStartIndex = cleanedResponse.IndexOf("<think>", StringComparison.OrdinalIgnoreCase);
-        if (thinkStartIndex >= 0)
+        if (thinkStartIndex < 0) return cleanedResponse;
+        var thinkEndIndex = cleanedResponse.IndexOf("</think>", thinkStartIndex, StringComparison.OrdinalIgnoreCase);
+        if (thinkEndIndex >= 0)
         {
-            var thinkEndIndex = cleanedResponse.IndexOf("</think>", thinkStartIndex, StringComparison.OrdinalIgnoreCase);
-            if (thinkEndIndex >= 0)
-            {
-                cleanedResponse = cleanedResponse[(thinkEndIndex + 8)..].Trim();
-            }
+            cleanedResponse = cleanedResponse[(thinkEndIndex + 8)..].Trim();
         }
 
         return cleanedResponse;
@@ -136,6 +180,6 @@ public class OllamaService(IConfiguration configuration) : IOllamaService
     private class OllamaResponse
     {
         [JsonPropertyName("response")]
-        public string Response { get; set; } = string.Empty;
+        public string Response { get; init; } = string.Empty;
     }
 } 

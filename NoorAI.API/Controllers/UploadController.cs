@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NoorAI.API.DTOs;
 using NoorAI.API.Services.Interfaces;
 
 namespace NoorAI.API.Controllers;
@@ -10,16 +11,26 @@ public class UploadController(IUploadService uploadService) : ControllerBase
 {
     [HttpPost]
     [RequestSizeLimit(10_000_000)]
-    public async Task<IActionResult> Upload([FromForm] IFormFile file)
+    public async Task<IActionResult> Upload([FromForm] UploadRequestDto request)
     {
         try
         {
-            var response = await uploadService.UploadResumeAsync(file);
+            if (!IsPdfFile(request.Resume) || !IsPdfFile(request.JobDescription))
+            {
+                return BadRequest(new { error = "Both files must be in PDF format" });
+            }
+
+            var response = await uploadService.UploadFilesAsync(request.Resume, request.JobDescription);
             return Ok(response);
         }
         catch (Exception ex)
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    private static bool IsPdfFile(IFormFile file)
+    {
+        return file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
     }
 }

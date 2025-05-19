@@ -25,5 +25,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .Property(i => i.Transcript)
             .IsRequired()
             .HasColumnType("text");
+
+        modelBuilder.Entity<Interview>()
+            .Property(i => i.UserName)
+            .IsRequired();
+
+        modelBuilder.Entity<Interview>()
+            .Property(i => i.UserEmail)
+            .IsRequired();
     }
 }
