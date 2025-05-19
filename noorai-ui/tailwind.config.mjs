@@ -6,7 +6,11 @@ export default {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      animation: {
+        bounce: 'bounce 1s infinite',
+      },
+    },
   },
   plugins: [],
 };

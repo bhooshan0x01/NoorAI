@@ -20,10 +20,17 @@ export default function ChatInterface() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentInterviewId, setCurrentInterviewId] = useState<number | null>(
-    null
-  );
+  const [currentInterviewId, setCurrentInterviewId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  React.useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const formatTranscript = (transcript: string): Message[] => {
     const lines = transcript.split("\n");
@@ -43,7 +50,6 @@ export default function ChatInterface() {
           isUser: true,
         });
       } else {
-        // If no prefix, assume it's an AI message
         formattedMessages.push({
           content: line.trim(),
           isUser: false,
@@ -82,7 +88,6 @@ export default function ChatInterface() {
       const data: InterviewResponse = await response.json();
       setCurrentInterviewId(data.id);
 
-      // Format and add all messages from the transcript
       const formattedMessages = formatTranscript(data.question);
       setMessages(formattedMessages);
     } catch (err) {
@@ -143,29 +148,39 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-4 py-4 shadow-sm">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-semibold text-gray-800">NoorAI Interview Assistant</h1>
+          <p className="text-gray-600 mt-1">Upload your resume to start the interview</p>
+        </div>
+      </header>
+
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${
-              message.isUser ? "justify-end" : "justify-start"
-            }`}
+            className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
           >
-            <div className="flex flex-col max-w-[70%]">
+            <div
+              className={`flex flex-col max-w-[80%] ${
+                message.isUser ? "items-end" : "items-start"
+              }`}
+            >
               <div
-                className={`text-sm font-semibold mb-1 ${
-                  message.isUser ? "text-blue-600" : "text-green-600"
+                className={`text-sm font-medium mb-1 ${
+                  message.isUser ? "text-blue-600" : "text-emerald-600"
                 }`}
               >
-                {message.isUser ? "You" : "Noor AI"}
+                {message.isUser ? "You" : "NoorAI"}
               </div>
               <div
-                className={`rounded-lg p-3 ${
+                className={`rounded-lg px-4 py-3 shadow-sm ${
                   message.isUser
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 text-gray-800"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-800 border border-gray-200"
                 }`}
               >
                 {message.content}
@@ -175,31 +190,36 @@ export default function ChatInterface() {
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="flex flex-col max-w-[70%]">
-              <div className="text-sm font-semibold mb-1 text-green-600">
-                Noor AI
+            <div className="flex flex-col max-w-[80%]">
+              <div className="text-sm font-medium mb-1 text-emerald-600">
+                NoorAI
               </div>
-              <div className="bg-gray-100 rounded-lg p-3 text-gray-800">
-                Thinking...
+              <div className="bg-white rounded-lg px-4 py-3 text-gray-800 border border-gray-200 shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-emerald-600 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                  <div className="w-2 h-2 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                </div>
               </div>
             </div>
           </div>
         )}
         {error && (
           <div className="flex justify-center">
-            <div className="bg-red-100 text-red-800 rounded-lg p-3">
+            <div className="bg-red-50 text-red-800 rounded-lg px-4 py-3 border border-red-200">
               {error}
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
-      <div className="border-t p-4 bg-white">
-        <div className="flex items-center space-x-2">
+      <div className="border-t border-gray-200 bg-white p-4">
+        <div className="max-w-4xl mx-auto flex items-center space-x-4">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-500 hover:text-gray-700"
+            className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
             disabled={isLoading}
           >
             <PaperClipIcon className="h-6 w-6" />
@@ -217,13 +237,13 @@ export default function ChatInterface() {
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
             placeholder="Type your message..."
-            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isLoading}
           />
           <button
             onClick={handleSendMessage}
             disabled={isLoading || !inputMessage.trim()}
-            className="p-2 text-blue-500 hover:text-blue-700 disabled:text-gray-400"
+            className="p-2 text-blue-600 hover:text-blue-700 transition-colors rounded-full hover:bg-blue-50 disabled:text-gray-400 disabled:hover:bg-transparent"
           >
             <PaperAirplaneIcon className="h-6 w-6" />
           </button>
