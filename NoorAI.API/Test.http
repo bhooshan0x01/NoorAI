@@ -1,0 +1,78 @@
+@baseUrl = https://localhost:5159
+@interviewId = 1
+
+### Upload Job Description First
+PUT {{baseUrl}}/api/interview/job-description
+Content-Type: application/json
+
+{
+    "interviewId": 1,
+    "jobDescription": "Senior Software Engineer Position\n\nRequirements:\n- 5+ years of .NET development\n- Experience with React\n- Cloud platform knowledge (AWS/Azure)\n- Strong problem-solving skills\n\nResponsibilities:\n- Design and implement scalable solutions\n- Lead technical discussions\n- Mentor junior developers"
+}
+
+### Upload Resume and Start Interview
+POST {{baseUrl}}/api/upload
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="resume.txt"
+Content-Type: text/plain
+
+John Doe
+Senior Software Engineer
+
+Experience:
+- 5 years of .NET development
+- 3 years of React experience
+- Strong in cloud technologies
+
+Education:
+- BS in Computer Science
+- MS in Software Engineering
+------WebKitFormBoundary--
+
+### Respond to First Question
+POST {{baseUrl}}/api/interview/respond
+Content-Type: application/json
+
+{
+    "interviewId": {{interviewId}}
+}
+
+### Respond to Second Question
+POST {{baseUrl}}/api/interview/respond
+Content-Type: application/json
+
+{
+    "interviewId": {{interviewId}}
+}
+
+### Respond to Third Question
+POST {{baseUrl}}/api/interview/respond
+Content-Type: application/json
+
+{
+    "interviewId": {{interviewId}}
+}
+
+### Respond to Fourth Question
+POST {{baseUrl}}/api/interview/respond
+Content-Type: application/json
+
+{
+    "interviewId": {{interviewId}}
+}
+
+### Respond to Fifth Question (Will end interview)
+POST {{baseUrl}}/api/interview/respond
+Content-Type: application/json
+
+{
+    "interviewId": {{interviewId}}
+}
+
+### Get Interview Details
+GET {{baseUrl}}/api/interview/{{interviewId}}
+
+### Get All Interviews
+GET {{baseUrl}}/api/interview 
