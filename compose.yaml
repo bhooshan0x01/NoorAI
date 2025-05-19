@@ -1,0 +1,22 @@
+﻿services:
+  noorai.api:
+    image: noorai.api
+    build:
+      context: .
+      dockerfile: NoorAI.API/Dockerfile
+
+  postgres:
+    image: postgres:15
+    container_name: noorai_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: noorai_user
+      POSTGRES_PASSWORD: N00r@!
+      POSTGRES_DB: noor_ai_db
+    ports:
+      - "5438:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: {}
