@@ -1,10 +1,4 @@
 ﻿services:
-  noorai.api:
-    image: noorai.api
-    build:
-      context: .
-      dockerfile: NoorAI.API/Dockerfile
-
   postgres:
     image: postgres:15
     container_name: noorai_postgres
@@ -13,10 +7,92 @@
       POSTGRES_USER: noorai_user
       POSTGRES_PASSWORD: N00r@!
       POSTGRES_DB: noor_ai_db
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5438:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noorai_user -d noor_ai_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - noorai_network
+    command: postgres -c 'max_connections=1000' -c 'listen_addresses=*'
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: noorai_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - noorai_network
+    entrypoint: >
+      /bin/sh -c "
+        ollama serve &
+        echo 'Waiting for Ollama to start...'
+        sleep 10
+        echo 'Pulling deepseek-r1:8b model...'
+        ollama pull deepseek-r1:8b
+        wait
+      "
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  api:
+    build:
+      context: .
+      dockerfile: NoorAI.API/Dockerfile
+    container_name: noorai_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5158
+      - ASPNETCORE_HTTP_PORT=5158
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=noor_ai_db;Username=noorai_user;Password=N00r@!;
+      - Ollama__BaseUrl=http://ollama:11434
+      - Ollama__ModelName=deepseek-r1:8b
+    ports:
+      - "5158:5158"
+    networks:
+      - noorai_network
+
+  ui:
+    build:
+      context: ./noorai-ui
+      dockerfile: Dockerfile
+    container_name: noorai_ui
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5158
+    ports:
+      - "8453:8453"
+    networks:
+      - noorai_network
+
+networks:
+  noorai_network:
+    name: noorai_network
+    driver: bridge
 
 volumes:
-  pgdata: {}
+  pgdata:
+    name: noorai_pgdata
+  ollama_data:
+    name: noorai_ollama_data
