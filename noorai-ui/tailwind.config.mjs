@@ -10,6 +10,9 @@ export default {
       animation: {
         bounce: 'bounce 1s infinite',
       },
+      maxWidth: {
+        '5xl': '64rem',
+      },
     },
   },
   plugins: [],
