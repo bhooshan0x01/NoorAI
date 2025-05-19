@@ -1,10 +1,20 @@
-import React from "react";
+import { Geist, Geist_Mono } from "next/font/google";
 import ChatInterface from "../components/ChatInterface";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white">
+    <div className={`${geistSans.className} ${geistMono.className}`}>
       <ChatInterface />
-    </main>
+    </div>
   );
 }
