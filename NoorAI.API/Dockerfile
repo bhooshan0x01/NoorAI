@@ -50,7 +50,6 @@ COPY --from=build /app/publish /app/publish
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:5158
 ENV ASPNETCORE_HTTP_PORT=5158
-ENV ASPNETCORE_HTTPS_PORT=
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 ENV ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=noor_ai_db;Username=noorai_user;Password=N00r@!;Pooling=true;Minimum Pool Size=0;Maximum Pool Size=100;Connection Idle Lifetime=60;Connection Pruning Interval=10;"
 

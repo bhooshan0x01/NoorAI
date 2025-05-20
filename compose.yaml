@@ -22,32 +22,6 @@
       - noorai_network
     command: postgres -c 'max_connections=1000' -c 'listen_addresses=*'
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: noorai_ollama
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - noorai_network
-    entrypoint: >
-      /bin/sh -c "
-        ollama serve &
-        echo 'Waiting for Ollama to start...'
-        sleep 10
-        echo 'Pulling deepseek-r1:8b model...'
-        ollama pull deepseek-r1:8b
-        wait
-      "
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-
   api:
     build:
       context: .
@@ -57,19 +31,19 @@
     depends_on:
       postgres:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5158
       - ASPNETCORE_HTTP_PORT=5158
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=noor_ai_db;Username=noorai_user;Password=N00r@!;
-      - Ollama__BaseUrl=http://ollama:11434
+      - Ollama__BaseUrl=http://host.docker.internal:11434
       - Ollama__ModelName=deepseek-r1:8b
     ports:
       - "5158:5158"
     networks:
       - noorai_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   ui:
     build:
@@ -94,5 +68,3 @@ networks:
 volumes:
   pgdata:
     name: noorai_pgdata
-  ollama_data:
-    name: noorai_ollama_data

@@ -24,17 +24,22 @@ NoorAI is an AI-powered interview platform that conducts automated interviews ba
 2. Start all services:
 
    ```
-   docker compose up --build
+   docker compose up -d
    ```
 
    This will start:
 
    - PostgreSQL database
-   - Ollama service
    - .NET API
    - Next.js UI
 
-3. Access the application:
+3. Open Ollama
+   - Make sure deepseek-r1:8b is present locally
+   - If not,
+   ```
+      ollama run deepseek-r1:8b
+   ```
+4. Access the application:
    - UI: http://localhost:8453
    - API: http://localhost:5158/swagger/index.html
    - PostgreSQL: localhost:5438

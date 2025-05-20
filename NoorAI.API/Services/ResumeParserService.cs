@@ -2,13 +2,12 @@ using System.Text.RegularExpressions;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
-using Microsoft.AspNetCore.Http;
 
 namespace NoorAI.API.Services;
 
 public class ResumeParserService
 {
-    public async Task<(string Name, string Email)> ParseResumeInfo(IFormFile resumeFile)
+    public async Task<(string Name, string Email, string FullText)> ParseResume(IFormFile resumeFile)
     {
         if (resumeFile == null || resumeFile.Length == 0)
             throw new ArgumentException("No resume file provided");
@@ -36,10 +35,32 @@ public class ResumeParserService
         var emailMatch = Regex.Match(resumeText, emailPattern);
         var email = emailMatch.Success ? emailMatch.Value : string.Empty;
 
-        // Extract name (assuming it's at the top of the resume)
         var name = ExtractName(resumeText);
+        
+        return (name, email, resumeText);
+    }
 
-        return (name, email);
+    public async Task<string> ParseJobDescription(IFormFile jobDescriptionFile)
+    {
+         if (jobDescriptionFile == null || jobDescriptionFile.Length == 0)
+            throw new ArgumentException("No job description file provided");
+
+         await using var stream = jobDescriptionFile.OpenReadStream();
+         using var pdfReader = new PdfReader(stream);
+         using var pdfDocument = new PdfDocument(pdfReader);
+        
+         var text = new System.Text.StringBuilder();
+        
+         // Extract text from all pages
+         for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
+         {
+             var page = pdfDocument.GetPage(i);
+             var strategy = new SimpleTextExtractionStrategy();
+             var currentText = PdfTextExtractor.GetTextFromPage(page, strategy);
+             text.Append(currentText);
+         }
+
+         return text.ToString();
     }
 
     private string ExtractName(string resumeText)
@@ -71,7 +92,7 @@ public class ResumeParserService
 
         // If no pattern matches, try to get the first line that looks like a name
         var lines = resumeText.Split('\n');
-        foreach (var line in lines.Take(5)) // Check first 5 lines
+        foreach (var line in lines.Take(5))
         {
             var trimmedLine = line.Trim();
             if (Regex.IsMatch(trimmedLine, @"^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$"))

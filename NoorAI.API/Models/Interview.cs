@@ -30,8 +30,6 @@ public class Interview
     public DateTime? CompletedAt { get; set; }
     
     public InterviewStatus Status { get; set; } = InterviewStatus.InProgress;
-
-    // Navigation property for related entities if needed
     public List<InterviewQuestion> Questions { get; set; } = new();
 }
 

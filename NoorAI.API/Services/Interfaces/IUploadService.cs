@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using NoorAI.API.DTOs;
 
 namespace NoorAI.API.Services.Interfaces;

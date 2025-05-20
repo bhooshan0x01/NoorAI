@@ -2,13 +2,6 @@ using NoorAI.API.Models;
 
 namespace NoorAI.API.DTOs;
 
-public record StartInterviewRequest(
-    string ResumeContent,
-    string JobDescription,
-    string UserName,
-    string UserEmail
-);
-
 public record InterviewResponse(
     int Id,
     string Question,
@@ -31,22 +24,6 @@ public record InterviewFeedbackResponse(
     string UserEmail,
     DateTime CreatedAt,
     DateTime? CompletedAt
-);
-
-public record UpdateJobDescriptionRequest(
-    int InterviewId,
-    string JobDescription
-);
-
-public record InterviewDetailsResponse(
-    int Id,
-    string ResumeContent,
-    string JobDescription,
-    string Transcript,
-    string? Feedback,
-    DateTime CreatedAt,
-    DateTime? CompletedAt,
-    InterviewStatus Status
 );
 
 public record InterviewSummaryResponse(

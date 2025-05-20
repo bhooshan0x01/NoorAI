@@ -11,33 +11,31 @@ public class OllamaService(IConfiguration configuration) : IOllamaService
     private readonly string _modelName = configuration["Ollama:ModelName"] ?? "deepseek-r1:8b";
     private readonly string _baseUrl = configuration["Ollama:BaseUrl"] ?? "http://localhost:11434";
 
-    public async Task<string> GenerateInterviewQuestion(string resumeContent, string jobDescription, string transcript)
+    public async Task<string> GenerateInterviewQuestion(string resumeContent, string jobDescription, string transcript, bool isFirstQuestion = false)
     {
         
         var prompt = $"""
-                      Based on the following resume and job description, generate a relevant interview question. 
-                      Consider the previous conversation context to avoid repetition and maintain a natural flow.
-
-                      Resume:
+                      Based *strictly* on the following resume and job description, generate a relevant interview question.
+                      The question *must* be derived from the specific skills, technologies, and experiences mentioned in the resume 
+                      and the requirements and technologies listed in the job description. Avoid generating general technical questions 
+                      that are not explicitly tied to the provided documents.
+                      {(isFirstQuestion ? "" : "Consider the previous conversation context to avoid repetition and maintain a natural flow.\n\n")}Resume:
                       {resumeContent}
 
                       Job Description:
                       {jobDescription}
 
-                      Previous Conversation:
-                      {transcript}
-
-                      Generate a single, focused interview question that:
-                      1. Is relevant to the candidate's experience and the job requirements
-                      2. Helps assess their qualifications
-                      3. Is specific and requires a detailed response
-                      4. Do not include any thinking process or <think> tags in the response
-                      5. Only provide the question directly
-                      6. MUST be different from any previous questions in the transcript
-                      7. Should focus on a different aspect of the job requirements than previous questions
-                      8. Should be based on specific requirements from the job description that haven't been covered yet
-                      9. Should avoid asking about the same skills or experiences that were already discussed
-                      10. Should only give one question at a time
+                      {(isFirstQuestion ? "" : $"Previous Conversation:\n{transcript}\n\n")}Generate a single, focused interview question that:
+                      1. Is directly relevant to skills/experiences *from the Resume* or requirements/technologies *from the Job Description*.
+                      2. Helps assess the candidate's qualifications based *only* on the provided information.
+                      3. Is specific and requires a detailed response related to the documents.
+                      4. Do not include any thinking process or <think> tags in the response.
+                      5. Only provide the question directly.
+                      6. MUST be different from any previous questions in the transcript.
+                      7. Should focus on a different aspect of the job requirements than previous questions.
+                      8. Should be based on specific requirements from the job description that haven't been covered yet.
+                      9. Should avoid asking about the same skills or experiences that were already discussed.
+                      10. Should only give one question at a time.
                       11. All questions should starts with a capital letter and end with a period.
                       Question:
                       """;
@@ -82,14 +80,14 @@ public class OllamaService(IConfiguration configuration) : IOllamaService
                       Be direct and specific about where their responses fell short of expectations or were incorrect.
                       Analyze their actual responses and provide concrete examples from the conversation.
 
-                      Resume:
-                      {resumeContent}
+                              Resume:
+                              {resumeContent}
 
-                      Job Description:
-                      {jobDescription}
+                              Job Description:
+                              {jobDescription}
 
-                      Interview Transcript:
-                      {transcript}
+                              Interview Transcript:
+                              {transcript}
 
                       Provide a structured feedback that includes:
 
@@ -123,25 +121,25 @@ public class OllamaService(IConfiguration configuration) : IOllamaService
 
                       5. Job Fit Assessment:
                       - Honestly evaluate if their demonstrated skills match the job requirements
-                      - Clearly state any significant gaps between their responses and job needs
-                      - If they're not a good fit, explain why based on their actual responses
-                      - Be specific about which required skills they failed to demonstrate
+                      - Clearly state any significant gaps between their responses and job needs.
+                      - If they're not a good fit, explain why based on their actual responses.
+                      - Be specific about which required skills they failed to demonstrate.
 
                       6. Recommendations:
-                      - Provide specific suggestions for addressing each identified issue
-                      - Include examples of correct answers they should have given
-                      - Suggest concrete ways to improve their knowledge gaps
-                      - If they're not a good fit, suggest what they need to learn or improve
+                      - Provide specific suggestions for addressing each identified issue.
+                      - Include examples of correct answers they should have given.
+                      - Suggest concrete ways to improve their knowledge gaps.
+                      - If they're not a good fit, suggest what they need to learn or improve.
 
                       Important Guidelines:
-                      - Be honest and direct about poor performance
-                      - Don't sugar-coat feedback when responses were incorrect
-                      - Use specific examples from their responses to support your critique
-                      - If they consistently failed to meet requirements, state this clearly
-                      - Focus on actual responses given, not potential or hypothetical performance
+                      - Be honest and direct about poor performance.
+                      - Don't sugar-coat feedback when responses were incorrect.
+                      - Use specific examples from their responses to support your critique.
+                      - If they consistently failed to meet requirements, state this clearly.
+                      - Focus on actual responses given, not potential or hypothetical performance.
 
                       Format the feedback in a clear, structured way with specific examples from the transcript.
-                      Feedback:
+                              Feedback:
                       """;
 
         var request = new

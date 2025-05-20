@@ -7,12 +7,19 @@ import React, {
   KeyboardEvent,
   useEffect,
 } from "react";
-import { Send, CheckCircle2, XCircle, FileText } from "lucide-react";
+import {
+  Send,
+  CheckCircle2,
+  XCircle,
+  FileText,
+  ArrowRight,
+} from "lucide-react";
 import { API_ENDPOINTS } from "../config/api";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import { useRouter } from "next/router";
 
 interface Message {
   content: string;
@@ -38,6 +45,7 @@ interface ApiError {
 }
 
 export default function ChatInterface() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -236,14 +244,12 @@ export default function ChatInterface() {
         throw new Error(formatErrorMessage(errorData));
       }
 
-      const data = await response.json();
       setMessages((prev) => [
         ...prev,
         {
-          content: "Interview ended. Here's your feedback:",
+          content: "Interview ended. Thank you for your time.",
           isUser: false,
         },
-        { content: data.feedback, isUser: false },
       ]);
       setCurrentInterviewId(null);
       setIsInterviewComplete(true);
@@ -251,6 +257,12 @@ export default function ChatInterface() {
       setError(err instanceof Error ? err.message : "Failed to end interview");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleViewFeedback = () => {
+    if (currentInterviewId) {
+      router.push(`/interviews/${currentInterviewId}`);
     }
   };
 
@@ -460,6 +472,18 @@ export default function ChatInterface() {
           )}
         </div>
       </div>
+
+      {isInterviewComplete && currentInterviewId && (
+        <div className="flex justify-center mb-4">
+          <Button
+            onClick={handleViewFeedback}
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+          >
+            View Detailed Feedback
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
