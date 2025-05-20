@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import { API_ENDPOINTS } from "../../config/api";
 import {
@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { format } from "date-fns";
+import InterviewFeedback from "../../components/InterviewFeedback";
 
 interface InterviewDetails {
   id: number;
@@ -32,6 +32,7 @@ export default function InterviewDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { id } = router.query;
+  const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -49,6 +50,7 @@ export default function InterviewDetailsPage() {
       }
       const data = await response.json();
       setInterview(data);
+      console.log(data.feedback);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch interview details"
@@ -80,16 +82,8 @@ export default function InterviewDetailsPage() {
     });
   };
 
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return "-";
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "-";
-      return format(date, "PPp");
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "-";
-    }
+  const scrollToFeedback = () => {
+    feedbackRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   if (isLoading) {
@@ -115,12 +109,22 @@ export default function InterviewDetailsPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Interview Details</h1>
-          <Button
-            onClick={() => router.push("/interviews")}
-            className="bg-gray-800 hover:bg-gray-700 text-white"
-          >
-            Back to Interviews
-          </Button>
+          <div className="flex gap-4">
+            {interview?.status === "Completed" && interview?.feedback && (
+              <Button
+                onClick={scrollToFeedback}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                View Feedback
+              </Button>
+            )}
+            <Button
+              onClick={() => router.push("/interviews")}
+              className="bg-gray-800 hover:bg-gray-700 text-white"
+            >
+              Back to Interviews
+            </Button>
+          </div>
         </div>
 
         <Card className="bg-black border-gray-800 mb-8">
@@ -136,14 +140,6 @@ export default function InterviewDetailsPage() {
               <div>
                 <p className="text-gray-400">Email</p>
                 <p className="text-white">{interview.userEmail}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">Start Time</p>
-                <p className="text-white">{formatDate(interview.startTime)}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">End Time</p>
-                <p className="text-white">{formatDate(interview.endTime)}</p>
               </div>
               <div>
                 <p className="text-gray-400">Status</p>
@@ -177,12 +173,12 @@ export default function InterviewDetailsPage() {
         </Card>
 
         {interview.feedback && (
-          <Card className="bg-black border-gray-800">
+          <Card className="bg-black border-gray-800" ref={feedbackRef}>
             <CardHeader>
               <CardTitle className="text-white">Feedback</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="whitespace-pre-wrap">{interview.feedback}</div>
+              <InterviewFeedback feedback={interview.feedback} />
             </CardContent>
           </Card>
         )}

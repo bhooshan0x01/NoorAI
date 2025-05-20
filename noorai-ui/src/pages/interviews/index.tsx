@@ -8,7 +8,6 @@ import {
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { useRouter } from "next/router";
-import { format } from "date-fns";
 
 interface InterviewSummary {
   id: number;
@@ -51,18 +50,6 @@ export default function InterviewsPage() {
     router.push(`/interviews/${id}`);
   };
 
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return "-";
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "-";
-      return format(date, "PPp");
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "-";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-7xl mx-auto">
@@ -96,8 +83,6 @@ export default function InterviewsPage() {
                     <tr className="border-b border-gray-800">
                       <th className="text-left p-4">Candidate</th>
                       <th className="text-left p-4">Email</th>
-                      <th className="text-left p-4">Start Time</th>
-                      <th className="text-left p-4">End Time</th>
                       <th className="text-left p-4">Status</th>
                       <th className="text-left p-4">Questions</th>
                       <th className="text-left p-4">Actions</th>
@@ -111,10 +96,6 @@ export default function InterviewsPage() {
                       >
                         <td className="p-4">{interview.userName}</td>
                         <td className="p-4">{interview.userEmail}</td>
-                        <td className="p-4">
-                          {formatDate(interview.startTime)}
-                        </td>
-                        <td className="p-4">{formatDate(interview.endTime)}</td>
                         <td className="p-4">
                           <span
                             className={`px-2 py-1 rounded-full text-sm ${
